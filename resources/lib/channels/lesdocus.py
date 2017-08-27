@@ -2,20 +2,19 @@
 from bs4 import BeautifulSoup as bs
 import re
 
-
 title       = ['Les docus']
 img         = ['lesdocus']
 readyForUse = True
 bypass_cache = False
 debug = False
 
-forced_headers = {'user-agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36'}
 root_url = 'http://www.les-docus.com'
+forced_headers = {'user-agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36'}
 
 def load_soup(url, cache_key):
     if debug:
         from urllib.request import Request, urlopen
-        q = Request(root_url, headers=forced_headers)
+        q = Request(url, headers=forced_headers)
         html = urlopen(q).read()
     else:
         from resources.lib import utils
@@ -82,6 +81,7 @@ def list_videos(channel, show_name):
 
     return videos
 
+
 def get_posts(channel, list_page, videos):
     print("Listing videos: " + list_page)
     soup = load_soup(list_page, list_page)
@@ -91,35 +91,61 @@ def get_posts(channel, list_page, videos):
 
     #print(posts[0].prettify(encoding='utf-8'))
     for post in posts:
-        title = post.select_one('h2 a').getText().encode('utf-8')
+        post_title = post.select_one('h2 a').getText().encode('utf-8')
         link = post.select_one('h2 a').attrs['href'].encode('utf-8')
-        img = post.select_one('.post-header img')
-        img_url = img.attrs['data-lazy-src'].encode('utf-8') if img is not None else ''
+        post_img = post.select_one('.post-header img')
+        img_url = post_img.attrs['data-lazy-src'].encode('utf-8') if post_img is not None else ''
         desc = post.select_one('.post-header p')
-        desc_txt = desc.getText().encode('utf-8') if desc is not None else ''
-        videos.append([channel, link, title, img_url, desc_txt, 'play'])
+        info_labels = {
+            "Title": post_title,
+            "Plot": desc.getText().encode('utf-8') if desc is not None else '',
+            #"Aired": date,
+            #"Duration": duration,
+            #"Year": date[:4]
+        }
+        videos.append([channel, link, post_title, img_url, info_labels, 'play'])
 
     next_page_item = soup.select_one('.post-nav a.next')
-
     next_page_link =  next_page_item.attrs['href'] if next_page_item is not None else None
 
-    print('next page link : %s' % (next_page_link))
     return next_page_link
 
 #getVideoURL(channel,video_URL)**: Retourne l'URL qui devra etre lu par KODI
-def getVideoURL(channel,video_url):
-    return []
+def getVideoURL(channel, video_url):
+    print('fetching URL for %s'%(video_url))
+    soup = load_soup(video_url, video_url)
+    post = soup.select_one(".post")
+
+    if post is None:
+        print('Could not load post on page')
+    #else:
+     #   print('Found post : %s\n#########'%(post))
+
+    #print('page content: %s'%(str(soup)))
+
+    result_url = ''
+
+    daily_regex = r"src=\"http:\/\/www.dailymotion.com\/embed\/video\/([^\"]*)\""
+    daily = re.search(daily_regex, str(soup), re.MULTILINE | re.IGNORECASE)
+    if daily:
+        daily_id = daily.group(1).encode('utf-8')
+        result_url = 'plugin://plugin.video.dailymotion_com/?url=%s&mode=playVideo'%(daily_id)
+
+    print("Result : " + result_url)
+    return result_url
 
 
 def main():
-    root_menu = (list_shows('lesdocus', 'none'))
-    print('Root menu %s'%(root_menu))
+    # root_menu = (list_shows('lesdocus', 'none'))
+    # print('Root menu %s'%(root_menu))
+    #
+    # first_sub_menu = list_shows('lesdocus', root_menu[0][1])
+    # print('Sub menu %s'%(first_sub_menu))
+    #
+    # videos = list_videos('lesdocus', first_sub_menu[0][1])
+    # print('Videos: %s'%(videos))
 
-    first_sub_menu = list_shows('lesdocus', root_menu[0][1])
-    print('Sub menu %s'%(first_sub_menu))
-
-    videos = list_videos('lesdocus', first_sub_menu[0][1])
-    print('Videos: %s'%(videos))
+    getVideoURL('lesdocus', 'http://www.les-docus.com/new-york-face-aux-ouragans/')
 
 if __name__ == "__main__":
     main()
