@@ -118,9 +118,11 @@ def getVideoURL(channel, video_url):
 
     if post is None:
         print('Could not load post on page')
+        return None
+    else:
+        return resolve_video_link(str(post))
 
-    result_url = None
-
+def resolve_video_link(html_block):
     matchers = []
     matchers.append([
         re.compile(r"src=\"http://www\.dailymotion\.com/embed/video/([^\"]*)\"", re.MULTILINE | re.IGNORECASE),
@@ -138,10 +140,10 @@ def getVideoURL(channel, video_url):
     ])
 
     for matcher in matchers:
-        match = matcher[0].search(str(post))
+        match = matcher[0].search(str(html_block))
         if match is not None:
             video_id = match.group(1)
-            return matcher[1]%(video_id)
+            return matcher[1] % (video_id)
 
     return None
 
