@@ -6,7 +6,7 @@ title       = ['Les docus']
 img         = ['lesdocus']
 readyForUse = True
 bypass_cache = False
-debug = False
+debug = True
 
 root_url = 'http://www.les-docus.com'
 forced_headers = {'user-agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36'}
@@ -118,18 +118,24 @@ def getVideoURL(channel, video_url):
 
     if post is None:
         print('Could not load post on page')
-    #else:
-     #   print('Found post : %s\n#########'%(post))
 
-    #print('page content: %s'%(str(soup)))
+    result_url = None
 
-    result_url = ''
+    daily_regex = re.compile(r"src=\"http://www\.dailymotion\.com/embed/video/([^\"]*)\"", re.MULTILINE | re.IGNORECASE)
+    daily = daily_regex.search(str(post))
 
-    daily_regex = r"src=\"http:\/\/www.dailymotion.com\/embed\/video\/([^\"]*)\""
-    daily = re.search(daily_regex, str(soup), re.MULTILINE | re.IGNORECASE)
+    #TODO: clean code + add other providers
     if daily:
-        daily_id = daily.group(1).encode('utf-8')
+        daily_id = daily.group(1)
         result_url = 'plugin://plugin.video.dailymotion_com/?url=%s&mode=playVideo'%(daily_id)
+
+    if (result_url is None):
+        youtube_regex = re.compile(r"youtube\.com/embed/([^\?]*)", re.MULTILINE | re.IGNORECASE)
+        youtube = youtube_regex.search(str(post))
+
+        if youtube:
+            youtube_id = youtube.group(1)
+            result_url = 'plugin://plugin.video.youtube/?path=/root/video&action=play_video&videoid=%s'%(youtube_id)
 
     print("Result : " + result_url)
     return result_url
@@ -144,8 +150,9 @@ def main():
     #
     # videos = list_videos('lesdocus', first_sub_menu[0][1])
     # print('Videos: %s'%(videos))
-
     getVideoURL('lesdocus', 'http://www.les-docus.com/new-york-face-aux-ouragans/')
+    getVideoURL('lesdocus', 'http://www.les-docus.com/archi-du-sud/')
+
 
 if __name__ == "__main__":
     main()
