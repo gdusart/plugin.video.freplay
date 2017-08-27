@@ -2,11 +2,11 @@
 from bs4 import BeautifulSoup as bs
 import re
 
-title       = ['Les docus']
-img         = ['lesdocus']
+title = ['Les docus']
+img = ['lesdocus']
 readyForUse = True
 bypass_cache = False
-debug = True
+debug = False
 
 root_url = 'http://www.les-docus.com'
 forced_headers = {'user-agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36'}
@@ -121,24 +121,29 @@ def getVideoURL(channel, video_url):
 
     result_url = None
 
-    daily_regex = re.compile(r"src=\"http://www\.dailymotion\.com/embed/video/([^\"]*)\"", re.MULTILINE | re.IGNORECASE)
-    daily = daily_regex.search(str(post))
+    matchers = []
+    matchers.append([
+        re.compile(r"src=\"http://www\.dailymotion\.com/embed/video/([^\"]*)\"", re.MULTILINE | re.IGNORECASE),
+        'plugin://plugin.video.dailymotion_com/?url=%s&mode=playVideo'
+    ])
 
-    #TODO: clean code + add other providers
-    if daily:
-        daily_id = daily.group(1)
-        result_url = 'plugin://plugin.video.dailymotion_com/?url=%s&mode=playVideo'%(daily_id)
+    matchers.append([
+        re.compile(r"youtube\.com/embed/([^\?]*)", re.MULTILINE | re.IGNORECASE),
+        'plugin://plugin.video.youtube/?path=/root/video&action=play_video&videoid=%s'
+    ])
 
-    if (result_url is None):
-        youtube_regex = re.compile(r"youtube\.com/embed/([^\?]*)", re.MULTILINE | re.IGNORECASE)
-        youtube = youtube_regex.search(str(post))
+    matchers.append([
+        re.compile(r"http://www\.youtube-nocookie\.com/v/([^\"]*)", re.MULTILINE | re.IGNORECASE),
+        'plugin://plugin.video.youtube/?path=/root/video&action=play_video&videoid=%s'
+    ])
 
-        if youtube:
-            youtube_id = youtube.group(1)
-            result_url = 'plugin://plugin.video.youtube/?path=/root/video&action=play_video&videoid=%s'%(youtube_id)
+    for matcher in matchers:
+        match = matcher[0].search(str(post))
+        if match is not None:
+            video_id = match.group(1)
+            return matcher[1]%(video_id)
 
-    print("Result : " + result_url)
-    return result_url
+    return None
 
 
 def main():
@@ -150,8 +155,9 @@ def main():
     #
     # videos = list_videos('lesdocus', first_sub_menu[0][1])
     # print('Videos: %s'%(videos))
-    getVideoURL('lesdocus', 'http://www.les-docus.com/new-york-face-aux-ouragans/')
-    getVideoURL('lesdocus', 'http://www.les-docus.com/archi-du-sud/')
+    print(getVideoURL('lesdocus', 'http://www.les-docus.com/new-york-face-aux-ouragans/'))
+    print(getVideoURL('lesdocus', 'http://www.les-docus.com/archi-du-sud/'))
+    print(getVideoURL('lesdocus', 'http://www.les-docus.com/cest-pas-sorcier-faire-un-disque-ca-vous-chante/'))
 
 
 if __name__ == "__main__":
