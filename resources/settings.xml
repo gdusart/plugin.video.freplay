@@ -41,7 +41,7 @@
         <setting label="TV Breizh" type="number" id="disptvbreizh" default="26"/> 
         <setting label="Histoire" type="number" id="disphistoire" default="27"/> 
         <setting label="TNTV" type="number" id="disptntv" default="28"/>
-        <setting label="Ushuaia TV" type="number" id="dispushuaiatv" default="29"/>  
+        <setting label="Ushuaia TV" type="number" id="dispushuaiatv" default="29"/>
 
     <!--- Chaînes Belges -->
     <setting type="sep"/>
@@ -78,7 +78,7 @@
         <setting label="Wat.tv" type="number" id="dispwattv" default="77"/>  
         <setting label="XTra" type="number" id="dispxtra" default="78"/>
         <setting label="BFM Business" type="number" id="dispbfmbusiness" default="79"/>
-
+        <setting label="Les docus" type="number" id="lesdocus" default="8"/>
     </category>
 
 

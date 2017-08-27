@@ -42,7 +42,7 @@ def getOrderChannel(chanName):
     if globalvar.ADDON.getSetting('disp' + chanName):
         return int(globalvar.ADDON.getSetting('disp' + chanName))
     else:
-        print chanName
+        print(chanName)
         return 20
 
 
@@ -104,12 +104,12 @@ def download_catalog(
         post_dic={},
         random_ua=False,
         specific_headers={}):
-    print url
+    print(url)
     file_name = format_filename(file_name)
     iCtlgRefresh = int(globalvar.ADDON.getSetting('ctlgRefresh')) * 60
 
     if not os.path.exists(globalvar.CACHE_DIR):
-        os.makedirs(globalvar.CACHE_DIR, mode=0777)
+        os.makedirs(globalvar.CACHE_DIR, mode='0777')
     file_path = os.path.join(globalvar.CACHE_DIR, file_name)
 
     if os.path.exists(file_path):
@@ -131,6 +131,7 @@ def download_catalog(
             headers = {'User-Agent': ua}
 
         if request_type == 'get':
+            print('get request to url %s with headers %s'%(url, headers))
             r = requests.get(url, headers=headers)
 
         elif request_type == 'post':
