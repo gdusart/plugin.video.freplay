@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup as bs
 import YDStreamExtractor
-
+from resources.lib.Pool import  Pool
 
 title = ['Les docus']
 img = ['lesdocus']
@@ -15,9 +15,10 @@ root_url = 'http://www.les-docus.com'
 def load_soup(url, cache_key):
     if test_mode:
         import urllib2
+        print('Calling URL %s' % url)
         force_headers = {
             'user-agent':
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36'}
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36'}
         req = urllib2.Request(url, headers=force_headers)
         html = urllib2.urlopen(req).read()
     else:
@@ -73,19 +74,72 @@ def list_shows(channel, folder):
 # Retourne un tableau **Ligne=[ channel, param pour passage dans fonction
 # getvideoURL, Titre pour menu, image pour menu, infoLabels, 'play']**
 # noinspection PyPep8Naming
-def list_videos(channel, show_name):
+def list_videos(channel, first_page_url):
     videos = []
     loop_idx = 0
 
-    next_page_link = show_name
-    while next_page_link is not None and loop_idx < max_pages_per_category:
-        next_page_link = get_posts(channel, next_page_link, videos)
+    current_page = first_page_url
+    while current_page is not None and loop_idx < max_pages_per_category:
+        current_page = get_posts(channel, current_page, videos)
         loop_idx += 1
 
     print('Videos : %s' % videos)
 
     return videos
 
+
+def list_videos_multithreaded(channel, first_page_url):
+    print('Loading videos for %s' % first_page_url)
+
+    pages = [[1, first_page_url]]
+    # determine last page number
+    # NB: selector select_one('.page-numbers:not(.next)' does not work :-(
+    pages_nav_elements = load_soup(first_page_url, first_page_url).select('.page-numbers')
+    pages_nav_elements.reverse()
+
+    # find the first one which is not "next page" (several possible cases... single page etc.)
+    # usually, it will be the second element (reverse order)
+    last_page_element = None
+    for nav in pages_nav_elements:
+        if 'next' not in nav.attrs['class']:
+            last_page_element = nav
+            break
+
+    last_page_number = int(last_page_element.text) if last_page_element is not None else 1
+
+    if last_page_number > 1:
+        #last + 1, end of range is exclusive
+        for index in range(2, last_page_number + 1):
+            # let's add '/' if it's not present (should be...)
+            page_url = '%spage/%d' % (
+                        (first_page_url if str(first_page_url).endswith('/') else str(first_page_url) + '/'), index)
+            pages.append([index, page_url])
+
+    pool = Pool(5)
+
+    # create a job for each page
+    store = []
+    params = []
+    print('Pages urls : %s' % pages)
+    for idx, page in enumerate(pages):
+        store_entry = []
+        store.append([idx, store_entry])
+        params.append([channel, page[1], store_entry])
+
+    async = pool.map_async(get_posts_task, params)
+    result = async.get()
+    pool.close()
+    print('result : %s' % result)
+    print('store :%s' % store)
+
+    allshows = []
+    for store_entry in store:
+        allshows = allshows + store_entry[1]
+
+    return allshows
+
+def get_posts_task(params):
+    return get_posts(params[0], params[1], params[2])
 
 def get_posts(channel, list_page, videos):
     print("Listing videos: " + list_page)

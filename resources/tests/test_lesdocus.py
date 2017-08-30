@@ -27,3 +27,9 @@ class SimpleTest(unittest.TestCase):
         self.assertIsNotNone(plugin.getVideoURL('lesdocus', 'http://www.les-docus.com/archi-du-sud/'))
         self.assertIsNotNone(
             plugin.getVideoURL('lesdocus', 'http://www.les-docus.com/cest-pas-sorcier-faire-un-disque-ca-vous-chante/'))
+
+    def test_multithread(self):
+        start_time = time.time()
+        result = plugin.list_videos_multithreaded('lesdocus', u'http://www.les-docus.com/arts/architecture/')
+        elapsed_time = time.time() - start_time
+        print('Loaded %d Videos in %d seconds' % (len(result), elapsed_time))
