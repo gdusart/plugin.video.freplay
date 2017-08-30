@@ -114,55 +114,14 @@ def get_posts(channel, list_page, videos):
 #getVideoURL(channel,video_URL)**: Retourne l'URL qui devra etre lu par KODI
 def getVideoURL(channel, video_url):
     print('fetching URL for %s'%(video_url))
-    soup = load_soup(video_url, video_url)
-    post = soup.select_one(".post")
 
-    if post is None:
-        print('Could not load post on page')
+    info = YDStreamExtractor.getVideoInfo(video_url, quality=3)
+
+    if info is None:
+        print('YDStream did no return anything for URL %s' % (video_url))
         return None
     else:
-        return resolve_video_link(str(post))
-
-
-def resolve_video_link(html_block):
-    matchers = []
-    matchers.append(r"src=\"(http://www\.dailymotion\.com/embed/video/[^\"]*)\"")
-    matchers.append(r"youtube\.com/embed/([^\?]*)")
-    matchers.append(r"youtube-nocookie\.com/v/([^\"]*)")
-
-    #print('Block: \n%s'%(html_block))
-
-    url = None
-    for matcher in matchers:
-        print('Trying to match with RE %s'%(matcher))
-        search = re.search(matcher, html_block)
-        if search is not None:
-            url = search.group(1)
-            break
-
-    if url is None:
-        print('No video link found')
-        return None
-    else:
-        print('Video link found : %s'%(url))
-        info = YDStreamExtractor.getVideoInfo(url)
-
-        if info is None:
-            print('YSD did no return anything for URL %s'%(url))
-            return None
-        else:
-            return info.streamURL()
-
-    #
-    # matchers.append([
-    #     re.compile(r"youtube\.com/embed/([^\?]*)", re.MULTILINE | re.IGNORECASE),
-    #     'plugin://plugin.video.youtube/?path=/root/video&action=play_video&videoid=%s'
-    # ])
-    #
-    # matchers.append([
-    #     re.compile(r"http://www\.youtube-nocookie\.com/v/([^\"]*)", re.MULTILINE | re.IGNORECASE),
-    #     'plugin://plugin.video.youtube/?path=/root/video&action=play_video&videoid=%s'
-    # ])
+        return info.streamURL()
 
 
 def main():
